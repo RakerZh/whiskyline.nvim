@@ -69,7 +69,7 @@ function pd.mode()
   }
 
   if not pd.initialized then
-    result.attr = stl_attr('@keyword')
+    result.attr = stl_attr('@label')
     result.attr.bold = true
   end
 
