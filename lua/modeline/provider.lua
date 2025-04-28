@@ -56,16 +56,19 @@ function M.fileinfo()
 end
 
 function M.filetype()
+  local devicons = require('nvim-web-devicons')
   return {
     name = 'filetype',
     stl = function()
       local alias = { cpp = 'C++' }
       local ft = api.nvim_get_option_value('filetype', { buf = 0 })
+      local ft_icon = devicons.get_icon_by_filetype(ft) or ''
       local up = ft:sub(1, 1):upper()
       if #ft == 1 then
         return up
       end
-      return alias[ft] and alias[ft] or up .. ft:sub(2, #ft)
+      -- return alias[ft] and alias[ft] or up .. ft:sub(2, #ft)
+      return ('%s %s'):format(ft_icon, up .. ft:sub(2))
     end,
     event = { 'BufEnter' },
   }
@@ -141,7 +144,7 @@ function M.gitinfo()
   return {
     stl = function()
       return coroutine.create(function(pieces, idx)
-        local signs = { 'Git:', '+', '~', '-' }
+        local signs = { ' ', ' ', ' ', ' ' }
         local order = { 'head', 'added', 'changed', 'removed' }
 
         local ok, dict = pcall(api.nvim_buf_get_var, 0, 'gitsigns_status_dict')
