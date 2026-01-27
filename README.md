@@ -1,6 +1,6 @@
-# modeline.nvim
+# whiskyline.nvim
 
-implement emacs default modeline on neovim.
+forked from modeline
 
 - async using coroutine
 - event drive

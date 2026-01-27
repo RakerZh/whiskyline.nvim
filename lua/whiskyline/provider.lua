@@ -48,8 +48,18 @@ function _G.ml_mode()
 end
 
 function M.fileinfo()
+  local devicons = require('nvim-web-devicons')
   return {
-    stl = [[%t]],
+    stl = function()
+      local ft = api.nvim_get_option_value('filetype', { buf = 0 })
+      local ft_icon = devicons.get_icon_by_filetype(ft) or ''
+      local up = ft:sub(1, 1):upper()
+      if #ft == 1 then
+        return up
+      end
+      -- return alias[ft] and alias[ft] or up .. ft:sub(2, #ft)
+      return ('%s %s'):format(ft_icon, up .. ft:sub(2))
+    end,
     name = 'fileinfo',
     event = { 'BufEnter' },
   }
@@ -139,7 +149,7 @@ function M.gitinfo()
   local alias = { 'Head', 'Add', 'Change', 'Delete' }
   for i = 2, 4 do
     local color = api.nvim_get_hl(0, { name = 'Diff' .. alias[i] })
-    api.nvim_set_hl(0, 'ModeLineGit' .. alias[i], { fg = color.bg })
+    api.nvim_set_hl(0, 'WhiskyLineGit' .. alias[i], { fg = color.bg })
   end
   return {
     stl = function()
@@ -167,7 +177,7 @@ function M.gitinfo()
           if i == 1 or (type(dict[order[i]]) == 'number' and dict[order[i]] > 0) then
             parts = ('%s %s'):format(
               parts,
-              ('%%#ModeLineGit%s#%s%%*'):format(alias[i], signs[i] .. dict[order[i]])
+              ('%%#WhiskyLineGit%s#%s%%*'):format(alias[i], signs[i] .. dict[order[i]])
             )
           end
         end

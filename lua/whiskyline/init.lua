@@ -1,18 +1,18 @@
 local co, api, iter = coroutine, vim.api, vim.iter
-local p, hl = require('modeline.provider'), api.nvim_set_hl
+local p, hl = require('whiskyline.provider'), api.nvim_set_hl
 
 local function stl_format(name, val)
-  return ('%%#ModeLine%s#%s%%*'):format(name, val)
+  return ('%%#WhiskyLine%s#%s%%*'):format(name, val)
 end
 
 local function default()
   local comps = {
-    -- [[%#ModeLineMode#%{v:lua.ml_mode()}%*]],
-    p.encoding(),
-    p.eol(),
-    [[%{(&modified&&&readonly?'%*':(&modified?'**':(&readonly?'%%':'--')))}  T%{tabpagenr()}  ]],
+    -- [[%#WhiskyLine#%{v:lua.ml_mode()}%*]],
+    -- p.encoding(),
+    -- p.eol(),
+    -- [[%{(&modified&&&readonly?'%*':(&modified?'**':(&readonly?'%%':'--')))}  T%{tabpagenr()}  ]],
     p.fileinfo(),
-    "  %P (%{printf('0x%03X, 0x%03X', line('.'), col('.'))})    ",
+    "  %P (%{printf('%04d, %04d', line('.'), col('.'))})    ",
     p.gitinfo(),
     ' %=',
     [[%{(bufname() !=# '' && &bt != 'terminal' ? '(' : '')}]],
@@ -39,7 +39,7 @@ local function default()
         end
       end
       if item.attr and item.name then
-        hl(0, ('ModeLine%s'):format(item.name), item.attr)
+        hl(0, ('WhiskyLine%s'):format(item.name), item.attr)
       end
     end)
     :totable()
@@ -81,11 +81,11 @@ return {
           vim.schedule(function()
             local ok, res = co.resume(stl_render, args)
             if not ok then
-              vim.notify('[ModeLine] render failed ' .. res, vim.log.levels.ERROR)
+              vim.notify('[WhiskyLine] render failed ' .. res, vim.log.levels.ERROR)
             end
           end)
         end,
-        desc = '[ModeLine] update',
+        desc = '[WhiskyLine] update',
       })
     end)
   end,
