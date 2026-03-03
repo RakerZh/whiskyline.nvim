@@ -6,22 +6,27 @@ local function stl_format(name, val)
 end
 
 local function default()
+  hl(0, 'WhiskyLineCap', { fg = '#2E3440', bg = '#81A1C1', bold = true })
   local comps = {
-    -- [[%#WhiskyLine#%{v:lua.ml_mode()}%*]],
+    '%#WhiskyLineCap# %*',
+    -- [[%##%{v:lua.ml_mode()}%*]],
     -- p.encoding(),
     -- p.eol(),
     -- [[%{(&modified&&&readonly?'%*':(&modified?'**':(&readonly?'%%':'--')))}  T%{tabpagenr()}  ]],
     p.fileinfo(),
-    "  %P (%{printf('%04d, %04d', line('.'), col('.'))})    ",
+    p.position(),
+    p.searchcount(),
     p.gitinfo(),
     ' %=',
-    [[%{(bufname() !=# '' && &bt != 'terminal' ? '(' : '')}]],
-    p.filetype(),
-    p.diagnostic(),
-    [[%{(bufname() !=# '' && &bt != 'terminal' ? ')' : '')}]],
+    -- [[%{(bufname() !=# '' && &bt != 'terminal' ? ' ' : '')}]],
+    -- p.filetype(),
+    -- [[%{(bufname() !=# '' && &bt != 'terminal' ? '' : '')}]],
+    ' ',
     p.progress(),
     p.lsp(),
     '%=%=',
+    p.diagnostic(),
+    ' %#WhiskyLineCap# %*',
   }
 
   local e, pieces = {}, {}
@@ -49,16 +54,22 @@ end
 local function render(comps, events, pieces)
   return co.create(function(args)
     while true do
-      local event = args.event == 'User' and ('%s %s'):format(args.event, args.match) or args.event
-      for _, idx in ipairs(events[event]) do
-        if comps[idx].async then
-          local child = comps[idx].stl()
-          coroutine.resume(child, pieces, idx)
-        else
-          pieces[idx] = stl_format(comps[idx].name, comps[idx].stl(args))
+      local ok, err = pcall(function()
+        local event = args.event == 'User' and ('%s %s'):format(args.event, args.match)
+          or args.event
+        for _, idx in ipairs(events[event] or {}) do
+          if comps[idx].async then
+            local child = comps[idx].stl()
+            coroutine.resume(child, pieces, idx)
+          else
+            pieces[idx] = stl_format(comps[idx].name, comps[idx].stl(args))
+          end
         end
+        vim.opt.stl = table.concat(pieces)
+      end)
+      if not ok then
+        vim.notify('[WhiskyLine] render error: ' .. tostring(err), vim.log.levels.WARN)
       end
-      vim.opt.stl = table.concat(pieces)
       args = co.yield()
     end
   end)

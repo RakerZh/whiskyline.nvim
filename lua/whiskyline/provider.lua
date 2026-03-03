@@ -49,38 +49,86 @@ end
 
 function M.fileinfo()
   local devicons = require('nvim-web-devicons')
+
   return {
-    stl = function()
-      local ft = api.nvim_get_option_value('filetype', { buf = 0 })
-      local ft_icon = devicons.get_icon_by_filetype(ft) or ''
-      local up = ft:sub(1, 1):upper()
-      if #ft == 1 then
-        return up
+    stl = (function()
+      local cache = ''
+      return function(args)
+        local bufnr = (args and args.buf) or 0
+        local bt = api.nvim_get_option_value('buftype', { buf = bufnr })
+        if bt ~= '' then return cache end
+        local ft = api.nvim_get_option_value('filetype', { buf = bufnr })
+        if ft == '' then return cache end
+        local bufname = api.nvim_buf_get_name(bufnr)
+        local ft_icon = devicons.get_icon(bufname, nil, { default = true })
+        local up = ft:sub(1, 1):upper()
+        cache = (' %s %s'):format(ft_icon or '', up .. ft:sub(2))
+        return cache
       end
-      -- return alias[ft] and alias[ft] or up .. ft:sub(2, #ft)
-      return ('%s %s'):format(ft_icon, up .. ft:sub(2))
-    end,
+    end)(),
     name = 'fileinfo',
-    event = { 'BufEnter' },
+    event = { 'BufEnter', 'FileType' },
+    attr = { fg = '#D8DEE9', bold = true },
   }
 end
 
 function M.filetype()
   local devicons = require('nvim-web-devicons')
+
   return {
     name = 'filetype',
-    stl = function()
-      local alias = { cpp = 'C++' }
-      local ft = api.nvim_get_option_value('filetype', { buf = 0 })
-      local ft_icon = devicons.get_icon_by_filetype(ft) or ''
-      local up = ft:sub(1, 1):upper()
-      if #ft == 1 then
-        return up
+    stl = (function()
+      local cache = ''
+      return function(args)
+        local bufnr = (args and args.buf) or 0
+        local bt = api.nvim_get_option_value('buftype', { buf = bufnr })
+        if bt ~= '' then return cache end
+        local ft = api.nvim_get_option_value('filetype', { buf = bufnr })
+        if ft == '' then return cache end
+        local bufname = api.nvim_buf_get_name(bufnr)
+        local ft_icon = devicons.get_icon(bufname, nil, { default = true })
+        local up = ft:sub(1, 1):upper()
+        if #ft == 1 then
+          cache = up
+        else
+          cache = ('%s %s'):format(ft_icon or '', up .. ft:sub(2))
+        end
+        return cache
       end
-      -- return alias[ft] and alias[ft] or up .. ft:sub(2, #ft)
-      return ('%s %s'):format(ft_icon, up .. ft:sub(2))
+    end)(),
+    event = { 'BufEnter', 'FileType' },
+    attr = { fg = '#D8DEE9', bold = true },
+  }
+end
+
+function M.position()
+  api.nvim_set_hl(0, 'WhiskyLinePosPercent', { fg = '#D8DEE9', bold = true }) -- white1
+  api.nvim_set_hl(0, 'WhiskyLinePosArrow', { fg = '#81A1C1', bold = true }) -- blue1
+  api.nvim_set_hl(0, 'WhiskyLinePosLine', { fg = '#D8DEE9', bold = true }) -- white1
+  api.nvim_set_hl(0, 'WhiskyLinePosCol', { fg = '#D8DEE9', bold = true }) -- white1
+  return {
+    stl = '  %#WhiskyLinePosPercent#%P%*'
+      .. "  %#WhiskyLinePosArrow# %*%#WhiskyLinePosLine#%{printf('0d%04D', line('.'))}%*"
+      .. "  %#WhiskyLinePosArrow# %*%#WhiskyLinePosCol#%{printf('0d%04D', col('.'))}%*    ",
+    name = 'position',
+    attr = { link = 'StatusLine' },
+  }
+end
+
+function M.searchcount()
+  api.nvim_set_hl(0, 'WhiskyLineSearch', { fg = '#EBCB8B', bold = true }) -- yellow.base
+  return {
+    stl = function()
+      if vim.v.hlsearch == 0 then return '' end
+      local ok, result = pcall(vim.fn.searchcount)
+      if not ok or result.total == 0 then return '' end
+      local total = result.incomplete == 1 and '?'
+        or tostring(math.min(result.total, result.maxcount or result.total))
+      return (' %d/%s '):format(result.current, total)
     end,
-    event = { 'BufEnter' },
+    name = 'searchcount',
+    event = { 'CursorMoved', 'CmdlineLeave' },
+    attr = { fg = '#EBCB8B', bold = true },
   }
 end
 
@@ -122,7 +170,7 @@ function M.lsp()
         end)
         :totable()
 
-      local msg = ('[%s:%s]'):format(
+      local msg = ('%s:%s'):format(
         table.concat(client_names, ','),
         root_dir ~= 'single' and fnamemodify(root_dir, ':t') or 'single'
       )
@@ -138,23 +186,27 @@ function M.lsp()
       elseif args.event == 'LspDetach' then
         msg = ''
       end
-      return '   %-20s' .. msg
+      return '  󱌣  %-20s' .. msg
     end,
     name = 'Lsp',
+    attr = { fg = '#81A1C1', bold = true },
     event = { 'LspProgress', 'LspAttach', 'LspDetach', 'BufEnter' },
   }
 end
 
 function M.gitinfo()
   local alias = { 'Head', 'Add', 'Change', 'Delete' }
+  api.nvim_set_hl(0, 'WhiskyLineGitHead', { fg = '#81A1C1', bold = true })
+  local git_fallbacks = { '#A3BE8C', '#EBCB8B', '#BF616A' }
   for i = 2, 4 do
     local color = api.nvim_get_hl(0, { name = 'Diff' .. alias[i] })
-    api.nvim_set_hl(0, 'WhiskyLineGit' .. alias[i], { fg = color.bg })
+    local fg = (color.bg and color.bg ~= 0) and color.bg or git_fallbacks[i - 1]
+    api.nvim_set_hl(0, 'WhiskyLineGit' .. alias[i], { fg = fg, bold = true })
   end
   return {
     stl = function()
       return coroutine.create(function(pieces, idx)
-        local signs = { ' ', ' ', ' ', ' ' }
+        local signs = { '󰊢 ', ' ', ' ', ' ' }
         local order = { 'head', 'added', 'changed', 'removed' }
 
         local ok, dict = pcall(api.nvim_buf_get_var, 0, 'gitsigns_status_dict')
@@ -191,7 +243,22 @@ function M.gitinfo()
 end
 
 function M.diagnostic()
+  -- previous version (no icons):
+  -- stl = function()
+  --   if not vim.diagnostic.is_enabled({ bufnr = 0 }) or #lsp.get_clients({ bufnr = 0 }) == 0 then
+  --     return ''
+  --   end
+  --   local t = {}
+  --   for i = 1, 3 do
+  --     local count = #diagnostic.get(0, { severity = i })
+  --     t[#t + 1] = ('%%#Diagnostic%s#%s%%*'):format(vim.diagnostic.severity[i], count)
+  --   end
+  --   return (' %s'):format(table.concat(t, ' '))
+  -- end
+
+  local icons = { ' 󰅙 ', ' 󰀨 ', ' 󰋼 ' } -- error, warn, info
   return {
+    name = 'diagnostic',
     stl = function()
       if not vim.diagnostic.is_enabled({ bufnr = 0 }) or #lsp.get_clients({ bufnr = 0 }) == 0 then
         return ''
@@ -199,11 +266,10 @@ function M.diagnostic()
       local t = {}
       for i = 1, 3 do
         local count = #diagnostic.get(0, { severity = i })
-        t[#t + 1] = ('%%#Diagnostic%s#%s%%*'):format(vim.diagnostic.severity[i], count)
+        t[#t + 1] = ('%%#Diagnostic%s#%s%s%%*'):format(vim.diagnostic.severity[i], icons[i], count)
       end
       return (' %s'):format(table.concat(t, ' '))
     end,
-
     event = { 'DiagnosticChanged', 'BufEnter', 'LspAttach' },
   }
 end
