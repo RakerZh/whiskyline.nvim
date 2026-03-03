@@ -250,7 +250,11 @@ function M.gitinfo()
   api.nvim_set_hl(0, 'WhiskyLineGitHead', { bg = '#181D25', fg = '#81A1C1', bold = true })
   local git_colors = { '#A3BE8C', '#EBCB8B', '#BF616A' }
   for i = 2, 4 do
-    api.nvim_set_hl(0, 'WhiskyLineGit' .. alias[i], { fg = git_colors[i - 1], bold = true })
+    api.nvim_set_hl(
+      0,
+      'WhiskyLineGit' .. alias[i],
+      { fg = git_colors[i - 1], bg = '#181D25', bold = true }
+    )
   end
   return {
     stl = function()
@@ -290,19 +294,6 @@ function M.gitinfo()
 end
 
 function M.diagnostic()
-  -- previous version (no icons):
-  -- stl = function()
-  --   if not vim.diagnostic.is_enabled({ bufnr = 0 }) or #lsp.get_clients({ bufnr = 0 }) == 0 then
-  --     return ''
-  --   end
-  --   local t = {}
-  --   for i = 1, 3 do
-  --     local count = #diagnostic.get(0, { severity = i })
-  --     t[#t + 1] = ('%%#Diagnostic%s#%s%%*'):format(vim.diagnostic.severity[i], count)
-  --   end
-  --   return (' %s'):format(table.concat(t, ' '))
-  -- end
-
   local icons = { ' 󰅙 ', ' 󰀨 ', ' 󰋼 ' } -- error, warn, info
   return {
     name = 'diagnostic',

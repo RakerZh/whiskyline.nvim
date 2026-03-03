@@ -8,11 +8,12 @@ end
 local function default()
   hl(0, 'WhiskyLineCap', { fg = '#81A1C1', bold = true })
   local comps = {
+
     p.fileinfo(),
     p.position(),
     p.searchcount(),
     p.gitinfo(),
-    ' %=',
+    '%=',
     p.progress(),
     p.diagnostic(),
     '%=%=',
