@@ -6,27 +6,18 @@ local function stl_format(name, val)
 end
 
 local function default()
-  hl(0, 'WhiskyLineCap', { fg = '#2E3440', bg = '#81A1C1', bold = true })
+  hl(0, 'WhiskyLineCap', { fg = '#81A1C1', bold = true })
   local comps = {
-    '%#WhiskyLineCap# %*',
-    -- [[%##%{v:lua.ml_mode()}%*]],
-    -- p.encoding(),
-    -- p.eol(),
-    -- [[%{(&modified&&&readonly?'%*':(&modified?'**':(&readonly?'%%':'--')))}  T%{tabpagenr()}  ]],
     p.fileinfo(),
     p.position(),
     p.searchcount(),
     p.gitinfo(),
     ' %=',
-    -- [[%{(bufname() !=# '' && &bt != 'terminal' ? ' ' : '')}]],
-    -- p.filetype(),
-    -- [[%{(bufname() !=# '' && &bt != 'terminal' ? '' : '')}]],
-    ' ',
     p.progress(),
-    p.lsp(),
-    '%=%=',
     p.diagnostic(),
-    ' %#WhiskyLineCap# %*',
+    '%=%=',
+    p.lsp(),
+    -- p.formatter(),
   }
 
   local e, pieces = {}, {}

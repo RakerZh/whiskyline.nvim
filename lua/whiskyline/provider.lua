@@ -56,25 +56,28 @@ function M.fileinfo()
       return function(args)
         local bufnr = (args and args.buf) or 0
         local bt = api.nvim_get_option_value('buftype', { buf = bufnr })
-        if bt ~= '' then return cache end
+        if bt ~= '' then
+          return cache
+        end
         local ft = api.nvim_get_option_value('filetype', { buf = bufnr })
-        if ft == '' then return cache end
+        if ft == '' then
+          return cache
+        end
         local bufname = api.nvim_buf_get_name(bufnr)
         local ft_icon = devicons.get_icon(bufname, nil, { default = true })
         local up = ft:sub(1, 1):upper()
-        cache = (' %s %s'):format(ft_icon or '', up .. ft:sub(2))
+        cache = (' %s %s '):format(ft_icon or '', up .. ft:sub(2))
         return cache
       end
     end)(),
     name = 'fileinfo',
     event = { 'BufEnter', 'FileType' },
-    attr = { fg = '#D8DEE9', bold = true },
+    attr = { bg = '#81A1C1', fg = '#181D25', bold = true },
   }
 end
 
 function M.filetype()
   local devicons = require('nvim-web-devicons')
-
   return {
     name = 'filetype',
     stl = (function()
@@ -82,9 +85,13 @@ function M.filetype()
       return function(args)
         local bufnr = (args and args.buf) or 0
         local bt = api.nvim_get_option_value('buftype', { buf = bufnr })
-        if bt ~= '' then return cache end
+        if bt ~= '' then
+          return cache
+        end
         local ft = api.nvim_get_option_value('filetype', { buf = bufnr })
-        if ft == '' then return cache end
+        if ft == '' then
+          return cache
+        end
         local bufname = api.nvim_buf_get_name(bufnr)
         local ft_icon = devicons.get_icon(bufname, nil, { default = true })
         local up = ft:sub(1, 1):upper()
@@ -102,10 +109,10 @@ function M.filetype()
 end
 
 function M.position()
-  api.nvim_set_hl(0, 'WhiskyLinePosPercent', { fg = '#D8DEE9', bold = true }) -- white1
-  api.nvim_set_hl(0, 'WhiskyLinePosArrow', { fg = '#81A1C1', bold = true }) -- blue1
-  api.nvim_set_hl(0, 'WhiskyLinePosLine', { fg = '#D8DEE9', bold = true }) -- white1
-  api.nvim_set_hl(0, 'WhiskyLinePosCol', { fg = '#D8DEE9', bold = true }) -- white1
+  -- api.nvim_set_hl(0, 'WhiskyLinePosPercent', { fg = '#81A1C1' }) -- white1
+  -- api.nvim_set_hl(0, 'WhiskyLinePosArrow', { fg = '#81A1C1' }) -- blue1
+  -- api.nvim_set_hl(0, 'WhiskyLinePosLine', { fg = '#81A1C1' }) -- white1
+  -- api.nvim_set_hl(0, 'WhiskyLinePosCol', { fg = '#81A1C1' }) -- white1
   return {
     stl = '  %#WhiskyLinePosPercent#%P%*'
       .. "  %#WhiskyLinePosArrow# %*%#WhiskyLinePosLine#%{printf('0d%04D', line('.'))}%*"
@@ -116,19 +123,22 @@ function M.position()
 end
 
 function M.searchcount()
-  api.nvim_set_hl(0, 'WhiskyLineSearch', { fg = '#EBCB8B', bold = true }) -- yellow.base
   return {
     stl = function()
-      if vim.v.hlsearch == 0 then return '' end
+      if vim.v.hlsearch == 0 then
+        return ''
+      end
       local ok, result = pcall(vim.fn.searchcount)
-      if not ok or result.total == 0 then return '' end
+      if not ok or result.total == 0 then
+        return ''
+      end
       local total = result.incomplete == 1 and '?'
         or tostring(math.min(result.total, result.maxcount or result.total))
       return (' %d/%s '):format(result.current, total)
     end,
     name = 'searchcount',
     event = { 'CursorMoved', 'CmdlineLeave' },
-    attr = { fg = '#EBCB8B', bold = true },
+    attr = { fg = '#D8DEE9', bold = true },
   }
 end
 
@@ -149,6 +159,47 @@ function M.progress()
     name = 'LspProgress',
     event = { 'LspProgress' },
     attr = { link = 'Type' },
+  }
+end
+
+function M.formatter()
+  return {
+    stl = (function()
+      local cache = ''
+      return function(args)
+        local bufnr = (args and args.buf) or 0
+        local bt = api.nvim_get_option_value('buftype', { buf = bufnr })
+        if bt ~= '' then
+          return cache
+        end
+        local ft = api.nvim_get_option_value('filetype', { buf = bufnr })
+        if ft == '' then
+          return cache
+        end
+        local ok, guard_ft = pcall(require, 'guard.filetype')
+        if not ok then
+          return cache
+        end
+        local fmt_conf = guard_ft[ft]
+        if not fmt_conf or not fmt_conf.formatter then
+          cache = ''
+          return cache
+        end
+        local names = {}
+        for _, f in ipairs(fmt_conf.formatter) do
+          if f.cmd then
+            names[#names + 1] = vim.fn.fnamemodify(tostring(f.cmd), ':t')
+          elseif f.fn then
+            names[#names + 1] = 'custom'
+          end
+        end
+        cache = #names > 0 and (' 󰁨 %s '):format(table.concat(names, '+')) or ''
+        return cache
+      end
+    end)(),
+    name = 'formatter',
+    event = { 'BufEnter', 'FileType' },
+    attr = { bg = '#81A1C1', fg = '#181D25', bold = true },
   }
 end
 
@@ -186,27 +237,25 @@ function M.lsp()
       elseif args.event == 'LspDetach' then
         msg = ''
       end
-      return '  󱌣  %-20s' .. msg
+      return ' 󱌣 %-20s' .. msg
     end,
     name = 'Lsp',
-    attr = { fg = '#81A1C1', bold = true },
+    attr = { fg = '#181D25', bg = '#81A1C1', bold = true },
     event = { 'LspProgress', 'LspAttach', 'LspDetach', 'BufEnter' },
   }
 end
 
 function M.gitinfo()
   local alias = { 'Head', 'Add', 'Change', 'Delete' }
-  api.nvim_set_hl(0, 'WhiskyLineGitHead', { fg = '#81A1C1', bold = true })
-  local git_fallbacks = { '#A3BE8C', '#EBCB8B', '#BF616A' }
+  api.nvim_set_hl(0, 'WhiskyLineGitHead', { bg = '#181D25', fg = '#81A1C1', bold = true })
+  local git_colors = { '#A3BE8C', '#EBCB8B', '#BF616A' }
   for i = 2, 4 do
-    local color = api.nvim_get_hl(0, { name = 'Diff' .. alias[i] })
-    local fg = (color.bg and color.bg ~= 0) and color.bg or git_fallbacks[i - 1]
-    api.nvim_set_hl(0, 'WhiskyLineGit' .. alias[i], { fg = fg, bold = true })
+    api.nvim_set_hl(0, 'WhiskyLineGit' .. alias[i], { fg = git_colors[i - 1], bold = true })
   end
   return {
     stl = function()
       return coroutine.create(function(pieces, idx)
-        local signs = { '󰊢 ', ' ', ' ', ' ' }
+        local signs = { '󰊢 ', '  ', '  ', '  ' }
         local order = { 'head', 'added', 'changed', 'removed' }
 
         local ok, dict = pcall(api.nvim_buf_get_var, 0, 'gitsigns_status_dict')
@@ -227,10 +276,8 @@ function M.gitinfo()
         local parts = ''
         for i = 1, 4 do
           if i == 1 or (type(dict[order[i]]) == 'number' and dict[order[i]] > 0) then
-            parts = ('%s %s'):format(
-              parts,
-              ('%%#WhiskyLineGit%s#%s%%*'):format(alias[i], signs[i] .. dict[order[i]])
-            )
+            local item = ('%%#WhiskyLineGit%s#%s %%*'):format(alias[i], signs[i] .. dict[order[i]])
+            parts = parts .. (parts ~= '' and '%#WhiskyLineCap#%*' or '') .. item
           end
         end
         pieces[idx] = parts
