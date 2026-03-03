@@ -138,7 +138,7 @@ function M.searchcount()
     end,
     name = 'searchcount',
     event = { 'CursorMoved', 'CmdlineLeave' },
-    attr = { fg = '#D8DEE9', bold = true },
+    attr = { fg = '#81A1C1', bold = true },
   }
 end
 
