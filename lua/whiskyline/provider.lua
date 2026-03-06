@@ -55,6 +55,9 @@ function M.fileinfo()
       local cache = ''
       return function(args)
         local bufnr = (args and args.buf) or 0
+        if not api.nvim_buf_is_valid(bufnr) then
+          return cache
+        end
         local bt = api.nvim_get_option_value('buftype', { buf = bufnr })
         if bt ~= '' then
           return cache
@@ -84,6 +87,9 @@ function M.filetype()
       local cache = ''
       return function(args)
         local bufnr = (args and args.buf) or 0
+        if not api.nvim_buf_is_valid(bufnr) then
+          return cache
+        end
         local bt = api.nvim_get_option_value('buftype', { buf = bufnr })
         if bt ~= '' then
           return cache
@@ -168,6 +174,9 @@ function M.formatter()
       local cache = ''
       return function(args)
         local bufnr = (args and args.buf) or 0
+        if not api.nvim_buf_is_valid(bufnr) then
+          return cache
+        end
         local bt = api.nvim_get_option_value('buftype', { buf = bufnr })
         if bt ~= '' then
           return cache
